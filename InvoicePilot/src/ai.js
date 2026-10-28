@@ -65,3 +65,63 @@ export async function parseNote(text) {
     throw new Error("The AI returned an unreadable draft. Please try again.");
   }
 }
+
+/* ---------- Payment reminder drafting ---------- */
+
+export function defaultTone(daysOverdue) {
+  if (daysOverdue <= 3) return "friendly";
+  if (daysOverdue <= 20) return "firm";
+  return "final";
+}
+
+const REMINDER_SYSTEM = `You write payment reminder messages for a freelancer to send to a client about an unpaid invoice.
+Use ONLY the facts provided. Never invent late fees, interest, deadlines, legal action, or past conversations.
+
+Tone guide:
+- friendly: warm and light, assumes it was simply missed. If the invoice is not overdue yet, make it a gentle heads-up.
+- firm: polite but direct, states how many days overdue, asks for a payment date or confirmation within a few days.
+- final: serious and professional, says this is a final reminder before the freelancer follows up another way. Never threaten legal action or fees.
+
+Rules:
+- Under 110 words, plain text, no emojis.
+- Start with "Hi <first name>,".
+- Mention the invoice number, the amount with its currency, and the due date.
+- If a payment link is provided, put it on its own line exactly as given.
+- Sign off with the sender's name.
+- Subject: under 70 characters and includes the invoice number.`;
+
+const REMINDER_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    subject: { type: Type.STRING },
+    message: { type: Type.STRING },
+  },
+  required: ["subject", "message"],
+};
+
+export async function draftReminder(ctx) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-flash-latest",
+      contents: JSON.stringify(ctx),
+      config: {
+        systemInstruction: REMINDER_SYSTEM,
+        responseMimeType: "application/json",
+        responseSchema: REMINDER_SCHEMA,
+        temperature: 0.4,
+      },
+    });
+  } catch (e) {
+    if (String(e.message).includes("429")) {
+      throw new Error("The AI is rate-limited right now. Wait a minute and try again.");
+    }
+    throw e;
+  }
+  try {
+    return JSON.parse(response.text);
+  } catch {
+    throw new Error("The AI returned an unreadable reminder. Please try again.");
+  }
+}

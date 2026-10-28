@@ -1,11 +1,13 @@
 import "dotenv/config";
 import express from "express";
-import { parseNote } from "./src/ai.js";
-import { createAndSendInvoice, listInvoices, PayPalError } from "./src/paypal.js";
+import { parseNote, draftReminder, defaultTone } from "./src/ai.js";
+import { createAndSendInvoice, listInvoices, getInvoice, sendReminder } from "./src/paypal.js";
 
 const app = express();
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static("public"));
+
+const validId = (id) => /^[A-Za-z0-9-]+$/.test(id || "");
 
 function validateDraft(d) {
   const errors = [];
@@ -38,8 +40,7 @@ app.post("/api/invoices", async (req, res) => {
     res.json({ invoice: await createAndSendInvoice(req.body.draft) });
   } catch (e) {
     console.error(e.details ? JSON.stringify(e.details, null, 2) : e);
-    const issue = e instanceof PayPalError ? e.details?.details?.[0]?.description || e.message : e.message;
-    res.status(502).json({ error: "PayPal said: " + issue });
+    res.status(502).json({ error: "PayPal said: " + e.message });
   }
 });
 
@@ -47,7 +48,49 @@ app.get("/api/invoices", async (_req, res) => {
   try {
     res.json({ invoices: await listInvoices() });
   } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: "PayPal said: " + e.message });
+  }
+});
+
+// Draft an AI reminder for one invoice (nothing is sent here).
+app.post("/api/invoices/:id/reminder-draft", async (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: "Bad invoice id." });
+  try {
+    const inv = await getInvoice(req.params.id);
+    if (inv.state !== "open" && inv.state !== "overdue") {
+      return res.status(400).json({ error: "Only sent, unpaid invoices can get a reminder." });
+    }
+    const suggestedTone = defaultTone(inv.daysOverdue);
+    const tone = ["friendly", "firm", "final"].includes(req.body?.tone) ? req.body.tone : suggestedTone;
+    const draft = await draftReminder({
+      tone,
+      sender_name: process.env.BUSINESS_NAME || "Your freelancer",
+      client_first_name: inv.client.split(" ")[0],
+      invoice_number: inv.number || inv.id,
+      amount_due: inv.due,
+      currency: inv.currency,
+      due_date: inv.dueDate || "not specified",
+      days_overdue: inv.daysOverdue,
+      payment_link: inv.payUrl || "",
+    });
+    res.json({ invoice: inv, tone, suggestedTone, draft });
+  } catch (e) {
+    console.error(e);
     res.status(502).json({ error: e.message });
+  }
+});
+
+// Send PayPal's official reminder for one invoice.
+app.post("/api/invoices/:id/remind", async (req, res) => {
+  if (!validId(req.params.id)) return res.status(400).json({ error: "Bad invoice id." });
+  const { subject, note } = req.body || {};
+  if (!subject?.trim() || !note?.trim()) return res.status(400).json({ error: "Subject and message are required." });
+  try {
+    res.json(await sendReminder(req.params.id, { subject: subject.trim(), note: note.trim() }));
+  } catch (e) {
+    console.error(e.details ? JSON.stringify(e.details, null, 2) : e);
+    res.status(502).json({ error: "PayPal said: " + e.message });
   }
 });
 

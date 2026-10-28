@@ -50,7 +50,30 @@
     </section>
     <p id="status" role="status"></p>
   </main>
+    <dialog id="remindDialog">
+    <h2 id="rmTitle"></h2>
+    <p class="muted" id="rmMeta"></p>
+    <label>Tone
+      <select id="rmTone">
+        <option value="friendly">Friendly</option>
+        <option value="firm">Firm</option>
+        <option value="final">Final notice</option>
+      </select>
+    </label>
+    <p class="muted" id="rmHint"></p>
+    <label>Subject <input id="rmSubject" /></label>
+    <label>Message <textarea id="rmBody" rows="9"></textarea></label>
+    <p id="rmMsg" role="status"></p>
+    <div class="row">
+      <button id="rmSend" type="button">Send PayPal reminder</button>
+      <button class="ghost" id="rmMail" type="button">Email it myself</button>
+      <button class="ghost" id="rmCopy" type="button">Copy</button>
+      <button class="x" id="rmClose" type="button">Close</button>
+    </div>
+    <p class="muted">PayPal may replace the wording of its own reminder email with its standard text. To send your exact message, use "Email it myself" or Copy.</p>
+  </dialog>
     <script src="invoices.js"></script>
+      <script src="reminder.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

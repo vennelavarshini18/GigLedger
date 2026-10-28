@@ -42,3 +42,9 @@ td { padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowra
 .badge.open { background: #e6f0fd; color: var(--blue); }
 .badge.overdue { background: #fdeaea; color: #c0392b; }
 @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
+dialog { border: 0; border-radius: 14px; padding: 22px; width: min(560px, 92vw); box-shadow: 0 20px 60px rgba(20,30,60,.3); }
+dialog::backdrop { background: rgba(20,30,60,.45); }
+dialog h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+#rmMsg { min-height: 1.2em; margin: 4px 0; }
+#rmMsg.error { color: #c0392b; }
