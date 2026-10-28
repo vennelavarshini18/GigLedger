@@ -2,10 +2,35 @@ import "dotenv/config";
 import express from "express";
 import { parseNote, draftReminder, defaultTone } from "./src/ai.js";
 import { createAndSendInvoice, listInvoices, getInvoice, sendReminder } from "./src/paypal.js";
+import { getBriefing } from "./src/insights.js";
 
 const app = express();
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static("public"));
+
+app.set("trust proxy", 1); // needed on Render so we see each visitor's real IP
+
+const TEN_MIN = 10 * 60 * 1000;
+function limit(max, windowMs = TEN_MIN) {
+  const hits = new Map();
+  return (req, res, next) => {
+    const now = Date.now();
+    const recent = (hits.get(req.ip) || []).filter((t) => now - t < windowMs);
+    if (recent.length >= max) {
+      return res.status(429).json({ error: "Too many requests. Please wait a few minutes and try again." });
+    }
+    recent.push(now);
+    hits.set(req.ip, recent);
+    next();
+  };
+}
+
+app.use("/api", limit(120));
+app.use("/api/parse", limit(20));
+app.use("/api/invoices/:id/reminder-draft", limit(20));
+app.use("/api/insights", limit(30));
+
+app.get("/healthz", (_req, res) => res.send("ok"));
 
 const validId = (id) => /^[A-Za-z0-9-]+$/.test(id || "");
 
@@ -50,6 +75,15 @@ app.get("/api/invoices", async (_req, res) => {
   } catch (e) {
     console.error(e);
     res.status(502).json({ error: "PayPal said: " + e.message });
+  }
+});
+
+app.get("/api/insights", async (_req, res) => {
+  try {
+    res.json(await getBriefing(await listInvoices()));
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ error: e.message });
   }
 });
 

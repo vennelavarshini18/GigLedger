@@ -48,3 +48,7 @@ dialog h2 { margin: 0 0 4px; font-size: 1.15rem; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 #rmMsg { min-height: 1.2em; margin: 4px 0; }
 #rmMsg.error { color: #c0392b; }
+.card h2 span.tag { background: #eef1f7; color: var(--blue); width: auto; height: auto; border-radius: 99px; padding: 2px 8px; font-size: .75rem; display: inline-block; }
+.brief-head { font-size: 1.15rem; font-weight: 600; margin: 0 0 8px; }
+#briefPoints { margin: 0 0 8px; padding-left: 20px; }
+#briefPoints li { margin-bottom: 6px; }

@@ -120,6 +120,7 @@ $("sendBtn").onclick = async () => {
   try {
     showResult((await api("/api/invoices", { draft: readDraft() })).invoice);
     loadInvoices();
+    if (typeof loadBriefing === "function") loadBriefing();
     setStatus("");
   } catch (e) { setStatus(e.message, true); }
   $("sendBtn").disabled = false;

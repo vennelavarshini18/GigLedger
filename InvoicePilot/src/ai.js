@@ -125,3 +125,50 @@ export async function draftReminder(ctx) {
     throw new Error("The AI returned an unreadable reminder. Please try again.");
   }
 }
+/* ---------- Cash-flow briefing ---------- */
+
+const BRIEF_SYSTEM = `You are a cash-flow assistant for a freelancer. Write a short briefing from the facts provided.
+
+Rules:
+- Use ONLY the numbers and names in the facts. Copy amounts exactly as given. Never calculate new totals.
+- headline: under 12 words, states the main situation.
+- points: at most 3, each under 25 words. Start with the most urgent item.
+- Recommend a next action: a reminder for overdue invoices, a friendly nudge for ones due soon.
+- Do not predict client behavior, mention fees, or invent history.
+- Plain text, no emojis.`;
+
+const BRIEF_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    headline: { type: Type.STRING },
+    points: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: ["headline", "points"],
+};
+
+export async function writeBriefing(facts) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL || "gemini-flash-latest",
+      contents: JSON.stringify(facts),
+      config: {
+        systemInstruction: BRIEF_SYSTEM,
+        responseMimeType: "application/json",
+        responseSchema: BRIEF_SCHEMA,
+        temperature: 0.3,
+      },
+    });
+  } catch (e) {
+    if (String(e.message).includes("429")) {
+      throw new Error("The AI is rate-limited right now. Wait a minute and try again.");
+    }
+    throw e;
+  }
+  try {
+    return JSON.parse(response.text);
+  } catch {
+    throw new Error("The AI returned an unreadable briefing. Please try again.");
+  }
+}
