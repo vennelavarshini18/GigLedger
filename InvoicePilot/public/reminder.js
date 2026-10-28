@@ -68,6 +68,10 @@ q("rmCopy").onclick = async () => {
 
 q("rmMail").onclick = () => {
   const to = currentInvoice?.email || "";
-  const url = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(q("rmSubject").value)}&body=${encodeURIComponent(q("rmBody").value)}`;
-  window.location.href = url;
+  const url =
+    "https://mail.google.com/mail/?view=cm&fs=1" +
+    `&to=${encodeURIComponent(to)}` +
+    `&su=${encodeURIComponent(q("rmSubject").value)}` +
+    `&body=${encodeURIComponent(q("rmBody").value)}`;
+  window.open(url, "_blank", "noopener");
 };
