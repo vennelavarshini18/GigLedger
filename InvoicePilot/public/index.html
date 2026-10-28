@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InvoicePilot</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header><h1>InvoicePilot</h1><p>Describe the work. Get paid.</p></header>
+  <main>
+    <section class="card">
+      <h2><span>1</span> Tell us what you did</h2>
+      <textarea id="note" rows="4" placeholder="e.g. did 5 hrs of logo work for Ravi Kumar, $40/hr, he pays in 2 weeks"></textarea>
+      <button id="parseBtn">Draft invoice with AI</button>
+    </section>
+
+    <section class="card hidden" id="review">
+      <h2><span>2</span> Review and approve</h2>
+      <div id="warnings"></div>
+      <div class="grid">
+        <label>Client name <input id="client_name" /></label>
+        <label>Client email <input id="client_email" type="email" /></label>
+        <label>Currency
+          <select id="currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option><option>AUD</option></select>
+        </label>
+        <label>Due in (days) <input id="due_in_days" type="number" min="0" /></label>
+      </div>
+      <div id="items"></div>
+      <button class="ghost" id="addItem">+ Add line item</button>
+      <label>Note to client <input id="notes" /></label>
+      <p class="total">Total: <strong id="total">0.00</strong></p>
+      <button id="sendBtn">Approve and send via PayPal</button>
+    </section>
+
+    <section class="card hidden" id="result"></section>
+    <p id="status" role="status"></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
