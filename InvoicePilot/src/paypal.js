@@ -1,16 +1,5 @@
 const base = () => process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
 
-function requireEmailAddress(value, settingName) {
-  if (
-    typeof value !== "string" ||
-    value.includes("://") ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-  ) {
-    throw new Error(`${settingName} must be an email address, not a PayPal dashboard URL.`);
-  }
-  return value;
-}
-
 export class PayPalError extends Error {
   constructor(message, status, details) {
     super(message);
@@ -42,39 +31,19 @@ async function getToken() {
 
 async function pp(path, { method = "GET", body, headers = {} } = {}) {
   const token = await getToken();
-
   const res = await fetch(`${base()}${path}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...headers },
+    body: body ? JSON.stringify(body) : undefined,
   });
-
   const text = await res.text();
   let data = {};
-
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = { message: text };
-  }
-
+  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
   if (!res.ok) {
     const detail = data.details?.[0];
-    const msg = detail
-      ? `${detail.issue}: ${detail.description}`
-      : data.message;
-
-    throw new PayPalError(
-      msg || "PayPal request failed",
-      res.status,
-      data
-    );
+    const msg = detail ? `${detail.issue}: ${detail.description}` : data.message;
+    throw new PayPalError(msg || "PayPal request failed", res.status, data);
   }
-
   return data;
 }
 
@@ -91,27 +60,26 @@ const money = (n) => Number(n).toFixed(2);
 export function buildInvoicePayload(draft, invoiceNumber) {
   const [given, ...rest] = (draft.client_name || "Client").trim().split(/\s+/);
   const cur = draft.currency || "USD";
-  const businessEmail = requireEmailAddress(
-    process.env.PAYPAL_BUSINESS_EMAIL,
-    "PAYPAL_BUSINESS_EMAIL"
-  );
-  const clientEmail = requireEmailAddress(draft.client_email, "client_email");
+  const paymentTerm = draft.due_date
+    ? { term_type: "DUE_ON_DATE_SPECIFIED", due_date: draft.due_date }
+    : { term_type: termFromDays(draft.due_in_days) };
   return {
     detail: {
       ...(invoiceNumber ? { invoice_number: invoiceNumber } : {}),
+      ...(draft.invoice_date ? { invoice_date: draft.invoice_date } : {}),
       currency_code: cur,
       note: draft.notes || undefined,
-      payment_term: { term_type: termFromDays(draft.due_in_days) },
+      payment_term: paymentTerm,
     },
     invoicer: {
       name: { business_name: process.env.BUSINESS_NAME || "InvoicePilot Demo" },
-      email_address: businessEmail,
+      email_address: process.env.PAYPAL_BUSINESS_EMAIL,
     },
     primary_recipients: [
       {
         billing_info: {
           name: { given_name: given, surname: rest.join(" ") || undefined },
-          email_address: clientEmail,
+          email_address: draft.client_email,
         },
       },
     ],
@@ -125,13 +93,13 @@ export function buildInvoicePayload(draft, invoiceNumber) {
 }
 
 export async function createAndSendInvoice(draft) {
-  requireEmailAddress(process.env.PAYPAL_BUSINESS_EMAIL, "PAYPAL_BUSINESS_EMAIL");
-  requireEmailAddress(draft.client_email, "client_email");
   let invoiceNumber;
   try {
     const n = await pp("/v2/invoicing/generate-next-invoice-number", { method: "POST" });
     invoiceNumber = n.invoice_number;
-  } catch { /* PayPal will auto-number if allowed */ }
+  } catch (e) {
+    console.warn("Invoice number step failed:", e.message);
+  }
 
   const created = await pp("/v2/invoicing/invoices", {
     method: "POST",
@@ -156,15 +124,65 @@ export async function createAndSendInvoice(draft) {
   };
 }
 
-export async function listInvoices() {
-  const data = await pp("/v2/invoicing/invoices?page=1&page_size=20&total_required=true");
-  return (data.items || []).map((inv) => ({
+/* ---------- Status logic: PayPal has no "overdue" status, so we derive it ---------- */
+
+const PAID = new Set(["PAID", "MARKED_AS_PAID", "PAID_EXTERNAL"]);
+const OPEN = new Set(["SENT", "UNPAID", "PARTIALLY_PAID", "PAYMENT_PENDING"]);
+
+export function describeStatus(status, dueDate, now = new Date()) {
+  if (PAID.has(status)) return { state: "paid", daysOverdue: 0 };
+  if (OPEN.has(status)) {
+    if (dueDate) {
+      const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+      const due = Date.parse(`${dueDate}T00:00:00Z`);
+      const days = Math.floor((today - due) / 86400000);
+      if (days > 0) return { state: "overdue", daysOverdue: days };
+    }
+    return { state: "open", daysOverdue: 0 };
+  }
+  if (status === "DRAFT" || status === "SCHEDULED") return { state: "draft", daysOverdue: 0 };
+  return { state: "closed", daysOverdue: 0 };
+}
+
+function mapInvoice(inv) {
+  const dueDate = inv.detail?.payment_term?.due_date;
+  const { state, daysOverdue } = describeStatus(inv.status, dueDate);
+  const billing = inv.primary_recipients?.[0]?.billing_info;
+  const name = [billing?.name?.given_name, billing?.name?.surname].filter(Boolean).join(" ");
+  return {
     id: inv.id,
     number: inv.detail?.invoice_number,
     status: inv.status,
-    client: inv.primary_recipients?.[0]?.billing_info?.email_address,
+    state,
+    daysOverdue,
+    client: name || "—",
+    email: billing?.email_address,
     total: inv.amount?.value,
-    currency: inv.amount?.currency_code,
-    dueDate: inv.detail?.payment_term?.due_date,
-  }));
+    due: inv.due_amount?.value ?? inv.amount?.value,
+    currency: inv.amount?.currency_code || inv.detail?.currency_code || "USD",
+    invoiceDate: inv.detail?.invoice_date,
+    dueDate,
+    payUrl: inv.detail?.metadata?.recipient_view_url,
+  };
+}
+
+export async function listInvoices() {
+  const data = await pp("/v2/invoicing/invoices?page=1&page_size=50&total_required=true");
+  console.log(JSON.stringify(data.items?.[0], null, 2));
+  return (data.items || [])
+    .map(mapInvoice)
+    .sort((a, b) => (b.invoiceDate || "").localeCompare(a.invoiceDate || "") || (b.number || "").localeCompare(a.number || ""));
+}
+
+export async function getInvoice(id) {
+  return mapInvoice(await pp(`/v2/invoicing/invoices/${id}`));
+}
+
+// PayPal's own reminder email (only works for UNPAID / SENT / PARTIALLY_PAID; max 2 per day).
+export async function sendReminder(id, { subject, note }) {
+  await pp(`/v2/invoicing/invoices/${id}/remind`, {
+    method: "POST",
+    body: { subject, note, send_to_invoicer: false },
+  });
+  return { ok: true };
 }

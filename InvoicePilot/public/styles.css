@@ -23,3 +23,22 @@ button.x { background:transparent; color:var(--muted); padding:8px; margin:0; }
 #status.error { color:#c0392b; }
 a.pay { display:inline-block; margin-top:8px; color:var(--blue); }
 @media (max-width:600px) { .grid, .item { grid-template-columns:1fr; } }
+.between { justify-content: space-between; }
+.between .title { background: none; color: inherit; width: auto; height: auto; border-radius: 0; font-size: inherit; display: inline; }
+.muted { color: var(--muted); font-size: .9rem; }
+button.small { padding: 6px 12px; margin: 0; font-size: .85rem; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.stat small { color: var(--muted); display: block; }
+.stat strong { font-size: 1.15rem; }
+.stat.bad strong { color: #c0392b; }
+.stat.good strong { color: #1e8e4e; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th { text-align: left; color: var(--muted); font-weight: 500; padding: 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.badge { padding: 3px 10px; border-radius: 99px; font-size: .8rem; background: #eef1f7; }
+.badge.paid { background: #e3f6ea; color: #1e8e4e; }
+.badge.open { background: #e6f0fd; color: var(--blue); }
+.badge.overdue { background: #fdeaea; color: #c0392b; }
+@media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }

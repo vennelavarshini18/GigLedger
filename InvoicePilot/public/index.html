@@ -34,8 +34,23 @@
     </section>
 
     <section class="card hidden" id="result"></section>
+        <section class="card" id="dashboard">
+      <h2 class="between">
+        <span class="title">Your invoices</span>
+        <button class="ghost small" id="refreshBtn" type="button">Refresh</button>
+      </h2>
+      <div class="stats" id="stats"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+          <tbody id="invoiceBody"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="listStatus"></p>
+    </section>
     <p id="status" role="status"></p>
   </main>
+    <script src="invoices.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

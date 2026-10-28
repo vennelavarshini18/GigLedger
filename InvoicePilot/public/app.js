@@ -119,6 +119,7 @@ $("sendBtn").onclick = async () => {
   setStatus("Creating and sending your invoice on PayPal…");
   try {
     showResult((await api("/api/invoices", { draft: readDraft() })).invoice);
+    loadInvoices();
     setStatus("");
   } catch (e) { setStatus(e.message, true); }
   $("sendBtn").disabled = false;
