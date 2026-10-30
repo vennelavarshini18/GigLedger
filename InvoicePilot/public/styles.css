@@ -21,6 +21,12 @@ button.x { background:transparent; color:var(--muted); padding:8px; margin:0; }
 .warn { background:#fff6e0; border:1px solid #f3d27a; border-radius:8px; padding:10px; margin-bottom:12px; font-size:.9rem; }
 #status { text-align:center; color:var(--muted); min-height:1.2em; }
 #status.error { color:#c0392b; }
+#calendarHost { height: 520px; }
+#calendarHost .b-event { border-left-width: 6px !important; }
+#calendarHost .b-event .b-event-content { font-weight: 700; }
+#calendarHost .calendar-event-paid { --event-color: #028e09; }
+#calendarHost .calendar-event-open { --event-color: #055ec3; }
+#calendarHost .calendar-event-overdue { --event-color: #bc0303; }
 a.pay { display:inline-block; margin-top:8px; color:var(--blue); }
 @media (max-width:600px) { .grid, .item { grid-template-columns:1fr; } }
 .between { justify-content: space-between; }

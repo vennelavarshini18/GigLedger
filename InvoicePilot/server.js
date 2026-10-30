@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { fileURLToPath } from "node:url";
 import { parseNote, draftReminder, defaultTone } from "./src/ai.js";
 import { createAndSendInvoice, listInvoices, getInvoice, sendReminder } from "./src/paypal.js";
 import { getBriefing } from "./src/insights.js";
@@ -7,6 +8,9 @@ import { getBriefing } from "./src/insights.js";
 const app = express();
 app.use(express.json({ limit: "100kb" }));
 app.use(express.static("public"));
+
+const bryntumDir = fileURLToPath(new URL("./node_modules/@bryntum/calendar", import.meta.url));
+app.use("/vendor/bryntum", express.static(bryntumDir));
 
 app.set("trust proxy", 1); // needed on Render so we see each visitor's real IP
 

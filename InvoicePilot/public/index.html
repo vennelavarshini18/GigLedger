@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>InvoicePilot</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/vendor/bryntum/calendar.css" />
+  <link rel="stylesheet" href="/vendor/bryntum/stockholm-light.css" />
 </head>
 <body>
   <header><h1>InvoicePilot</h1><p>Describe the work. Get paid.</p></header>
@@ -41,6 +43,14 @@
       <button id="briefAction" class="hidden" type="button"></button>
       <p class="muted" id="briefStatus"></p>
     </section>
+
+        <section class="card" id="calendarCard">
+          <h2 class="between"><span class="title">Payment calendar</span><span class="tag">Bryntum</span></h2>
+          <p class="muted">Invoices appear on their due dates: red is overdue, blue is awaiting payment, green is paid. Click one for details.</p>
+          <div id="calendarHost"></div>
+          <p class="muted" id="calStatus"></p>
+        </section>
+
         <section class="card" id="dashboard">
       <h2 class="between">
         <span class="title">Your invoices</span>
@@ -82,6 +92,7 @@
     <script src="invoices.js"></script>
       <script src="reminder.js"></script>
         <script src="insights.js"></script>
+  <script type="module" src="calendar-view.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

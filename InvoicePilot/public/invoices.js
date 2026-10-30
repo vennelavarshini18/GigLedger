@@ -45,6 +45,8 @@ function renderInvoices(invoices) {
   });
   q("invoiceBody").replaceChildren(...rows);
   q("listStatus").textContent = invoices.length ? "" : "No invoices yet. Create your first one above.";
+  window.lastInvoices = invoices;
+  if (typeof window.updateCalendar === "function") window.updateCalendar(invoices);
 }
 
 async function loadInvoices() {
