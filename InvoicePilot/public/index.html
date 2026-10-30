@@ -3,95 +3,307 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>InvoicePilot</title>
+  <title>GigLedger | Invoicing for freelancers</title>
+  <meta name="description" content="GigLedger helps freelancers turn project notes into polished invoices, reminders and cashflow visibility." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧾</text></svg>" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="/vendor/bryntum/calendar.css" />
   <link rel="stylesheet" href="/vendor/bryntum/stockholm-light.css" />
 </head>
 <body>
-  <header><h1>InvoicePilot</h1><p>Describe the work. Get paid.</p></header>
-  <main>
-    <section class="card">
-      <h2><span>1</span> Tell us what you did</h2>
-      <textarea id="note" rows="4" placeholder="e.g. did 5 hrs of logo work for Ravi Kumar, $40/hr, he pays in 2 weeks"></textarea>
-      <button id="parseBtn">Draft invoice with AI</button>
-    </section>
-
-    <section class="card hidden" id="review">
-      <h2><span>2</span> Review and approve</h2>
-      <div id="warnings"></div>
-      <div class="grid">
-        <label>Client name <input id="client_name" /></label>
-        <label>Client email <input id="client_email" type="email" /></label>
-        <label>Currency
-          <select id="currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option><option>AUD</option></select>
-        </label>
-        <label>Due in (days) <input id="due_in_days" type="number" min="0" /></label>
+  <div class="page-shell">
+    <header class="topbar shell-blur">
+      <div class="brand-wrap">
+        <div class="brand-mark">G</div>
+        <div class="brand-text">GigLedger</div>
       </div>
-      <div id="items"></div>
-      <button class="ghost" id="addItem">+ Add line item</button>
-      <label>Note to client <input id="notes" /></label>
-      <p class="total">Total: <strong id="total">0.00</strong></p>
-      <button id="sendBtn">Approve and send via PayPal</button>
-    </section>
+      <span class="pill">Sandbox demo · no real money moves</span>
 
-    <section class="card hidden" id="result"></section>
-        <section class="card" id="briefing">
-      <h2 class="between"><span class="title">This week's briefing</span><span class="tag">AI</span></h2>
-      <p class="brief-head" id="briefHead"></p>
-      <ul id="briefPoints"></ul>
-      <button id="briefAction" class="hidden" type="button"></button>
-      <p class="muted" id="briefStatus"></p>
-    </section>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="#workflow">Workflow</a>
+        <a href="#dashboard">Dashboard</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
 
-        <section class="card" id="calendarCard">
-          <h2 class="between"><span class="title">Payment calendar</span><span class="tag">Bryntum</span></h2>
-          <p class="muted">Invoices appear on their due dates: red is overdue, blue is awaiting payment, green is paid. Click one for details.</p>
-          <div id="calendarHost"></div>
-          <p class="muted" id="calStatus"></p>
-        </section>
-
-        <section class="card" id="dashboard">
-      <h2 class="between">
-        <span class="title">Your invoices</span>
-        <button class="ghost small" id="refreshBtn" type="button">Refresh</button>
-      </h2>
-      <div class="stats" id="stats"></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
-          <tbody id="invoiceBody"></tbody>
-        </table>
+      <div class="top-actions">
+        <a class="secondary-btn" href="#workflow">Sign in</a>
+        <a class="primary-btn" href="#workflow">Start free</a>
       </div>
-      <p class="muted" id="listStatus"></p>
-    </section>
-    <p id="status" role="status"></p>
-  </main>
+    </header>
+
+    <main class="main-layout">
+      <section class="hero shell-blur">
+        <div class="hero-copy">
+          <span class="eyebrow">Built for independent professionals</span>
+          <h1>Turn project notes into polished invoices.</h1>
+          <p>
+            GigLedger helps freelancers create cleaner invoices, track due dates, and keep cash flowing without the admin pile-up.
+          </p>
+
+          <div class="cta-row">
+            <a class="primary-btn" href="#workflow">Start free</a>
+            <a class="secondary-btn" href="#pricing">View pricing</a>
+          </div>
+
+          <div class="trust-row">
+            <span>Trusted by 2,400+ freelancers</span>
+            <div class="mini-metrics">
+              <strong>98.6%</strong>
+              <span>On-time payments</span>
+            </div>
+            <div class="mini-metrics">
+              <strong>4.9/5</strong>
+              <span>Customer rating</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="mock-window">
+            <div class="window-bar">
+              <span></span><span></span><span></span>
+              <div class="window-title">gigledger.com</div>
+            </div>
+
+            <div class="mock-panel">
+              <div class="invoice-box">
+                <div class="invoice-head">
+                  <p>Outstanding</p>
+                  <strong>$8,240</strong>
+                </div>
+                <div class="invoice-list">
+                  <div class="invoice-line">
+                    <span>Brand identity</span>
+                    <strong>$1,200</strong>
+                  </div>
+                  <div class="invoice-line">
+                    <span>Landing page</span>
+                    <strong>$1,840</strong>
+                  </div>
+                  <div class="invoice-line">
+                    <span>Ad creative</span>
+                    <strong>$2,100</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="quick-stats">
+                <div>
+                  <small>Paid</small>
+                  <strong>$21.3k</strong>
+                </div>
+                <div>
+                  <small>Open</small>
+                  <strong>$3.4k</strong>
+                </div>
+                <div>
+                  <small>Late</small>
+                  <strong>2</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-strip shell-blur" id="features">
+        <article class="feature-card">
+          <div class="feature-icon">✦</div>
+          <h3>AI invoice drafting</h3>
+          <p>Turn rough notes into structured, professional invoices in seconds.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">◎</div>
+          <h3>Cashflow view</h3>
+          <p>Track what is paid, open, and overdue from a single dashboard.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">↗</div>
+          <h3>Reminder automation</h3>
+          <p>Send timely reminders with polished messaging and clear due-date visibility.</p>
+        </article>
+      </section>
+
+      <section class="testimonials shell-blur" aria-label="Customer feedback">
+        <div class="testimonial-header">
+          <span class="eyebrow">Trusted by freelancers</span>
+          <h2>Built for the pace of independent work.</h2>
+        </div>
+        <div class="testimonial-grid">
+          <article class="quote-card">
+            <p>“GigLedger removed the admin overhead from my freelance work. I invoice in minutes, not hours.”</p>
+            <div class="person-row">
+              <div class="avatar a1">A</div>
+              <div>
+                <strong>Aisha R.</strong>
+                <span>Brand designer</span>
+              </div>
+            </div>
+          </article>
+          <article class="quote-card">
+            <p>“The payment calendar alone is worth it. I finally understand what’s due and what’s overdue.”</p>
+            <div class="person-row">
+              <div class="avatar a2">M</div>
+              <div>
+                <strong>Marco N.</strong>
+                <span>Web developer</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="workspace shell-blur" id="workflow">
+        <div class="workspace-header">
+          <div>
+            <span class="eyebrow muted">Operations workspace</span>
+            <h2>From note to payment, without the chaos.</h2>
+          </div>
+        </div>
+
+        <div class="workspace-grid">
+          <section class="card panel-card">
+            <h2><span>1</span> Tell us what you did</h2>
+            <textarea id="note" rows="4" placeholder="e.g. did 5 hrs of logo work for Ravi Kumar, $40/hr, he pays in 2 weeks"></textarea>
+            <div class="chips">
+              <span class="muted">Try:</span>
+              <button class="chip" type="button" data-note="did 5 hrs of logo work for Ravi Kumar, $40/hr, plus $60 for the brand colour guide, he pays in 2 weeks">Logo work</button>
+              <button class="chip" type="button" data-note="built a 3 page website for Maria Lopez, $450 total, due in 30 days">Website</button>
+              <button class="chip" type="button" data-note="translated 12 pages for Hans Weber at $25 per page, due in 15 days">Translation</button>
+            </div>
+            <button id="parseBtn" class="primary-btn full">Draft invoice with AI</button>
+          </section>
+
+          <section class="card panel-card hidden" id="review">
+            <h2><span>2</span> Review and approve</h2>
+            <div id="warnings"></div>
+            <div class="grid">
+              <label>Client name <input id="client_name" /></label>
+              <label>Client email <input id="client_email" type="email" /></label>
+              <label>Currency
+                <select id="currency"><option>USD</option><option>EUR</option><option>GBP</option><option>CAD</option><option>AUD</option></select>
+              </label>
+              <label>Due in (days) <input id="due_in_days" type="number" min="0" /></label>
+            </div>
+            <div id="items"></div>
+            <button class="secondary-btn ghost-btn" id="addItem" type="button">+ Add line item</button>
+            <label>Note to client <input id="notes" /></label>
+            <p class="total">Total: <strong id="total">0.00</strong></p>
+            <button id="sendBtn" class="primary-btn full">Approve and send via PayPal</button>
+          </section>
+
+          <section class="card panel-card hidden" id="result"></section>
+        </div>
+      </section>
+
+      <section class="card shell-blur analytics-panel" id="briefing">
+        <div class="briefing-header">
+          <h2>This week’s briefing</h2>
+          <span class="tag-pill">AI</span>
+        </div>
+        <p class="brief-head" id="briefHead"></p>
+        <ul id="briefPoints"></ul>
+        <button id="briefAction" class="hidden" type="button"></button>
+        <p class="muted" id="briefStatus"></p>
+      </section>
+
+      <section class="card shell-blur" id="calendarCard">
+        <div class="briefing-header">
+          <h2>Payment calendar</h2>
+          <span class="tag-pill">Bryntum</span>
+        </div>
+        <p class="muted">Invoices appear on their due dates: red is overdue, blue is awaiting payment, green is paid. Click one for details.</p>
+        <div id="calendarHost"></div>
+        <p class="muted" id="calStatus"></p>
+      </section>
+
+      <section class="pricing shell-blur" id="pricing">
+        <div class="pricing-header">
+          <span class="eyebrow">Simple pricing</span>
+          <h2>Built for independent work, without the bloat.</h2>
+        </div>
+        <div class="pricing-grid">
+          <article class="price-card">
+            <span class="plan-name">Starter</span>
+            <h3>$0<span>/month</span></h3>
+            <ul>
+              <li>Up to 10 invoices</li>
+              <li>AI drafting</li>
+              <li>Basic reminders</li>
+            </ul>
+            <a class="secondary-btn full" href="#workflow">Try free</a>
+          </article>
+
+          <article class="price-card featured">
+            <span class="plan-name">Growth</span>
+            <h3>$19<span>/month</span></h3>
+            <ul>
+              <li>Unlimited invoices</li>
+              <li>Cashflow dashboard</li>
+              <li>Advanced reminder flows</li>
+            </ul>
+            <a class="primary-btn full" href="#workflow">Start now</a>
+          </article>
+
+          <article class="price-card">
+            <span class="plan-name">Studio</span>
+            <h3>$49<span>/month</span></h3>
+            <ul>
+              <li>Multi-client billing</li>
+              <li>Priority support</li>
+              <li>Custom reporting</li>
+            </ul>
+            <a class="secondary-btn full" href="#workflow">Talk to sales</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="card shell-blur" id="dashboard">
+        <div class="briefing-header dashboard-header">
+          <h2>Your invoices</h2>
+          <button class="secondary-btn ghost-btn small-btn" id="refreshBtn" type="button">Refresh</button>
+        </div>
+        <div class="stats" id="stats"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Invoice</th><th>Client</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+            <tbody id="invoiceBody"></tbody>
+          </table>
+        </div>
+        <p class="muted" id="listStatus"></p>
+      </section>
+
+      <p id="status" role="status"></p>
+    </main>
+
     <dialog id="remindDialog">
-    <h2 id="rmTitle"></h2>
-    <p class="muted" id="rmMeta"></p>
-    <label>Tone
-      <select id="rmTone">
-        <option value="friendly">Friendly</option>
-        <option value="firm">Firm</option>
-        <option value="final">Final notice</option>
-      </select>
-    </label>
-    <p class="muted" id="rmHint"></p>
-    <label>Subject <input id="rmSubject" /></label>
-    <label>Message <textarea id="rmBody" rows="9"></textarea></label>
-    <p id="rmMsg" role="status"></p>
-    <div class="row">
-      <button id="rmSend" type="button">Send PayPal reminder</button>
-      <button class="ghost" id="rmMail" type="button">Open in Gmail</button>
-      <button class="ghost" id="rmCopy" type="button">Copy</button>
-      <button class="x" id="rmClose" type="button">Close</button>
-    </div>
-    <p class="muted">PayPal may replace the wording of its own reminder email with its standard text. To send your exact message, use "Email it myself" or Copy.</p>
-  </dialog>
-    <script src="invoices.js"></script>
-      <script src="reminder.js"></script>
-        <script src="insights.js"></script>
+      <h2 id="rmTitle"></h2>
+      <p class="muted" id="rmMeta"></p>
+      <label>Tone
+        <select id="rmTone">
+          <option value="friendly">Friendly</option>
+          <option value="firm">Firm</option>
+          <option value="final">Final notice</option>
+        </select>
+      </label>
+      <p class="muted" id="rmHint"></p>
+      <label>Subject <input id="rmSubject" /></label>
+      <label>Message <textarea id="rmBody" rows="9"></textarea></label>
+      <p id="rmMsg" role="status"></p>
+      <div class="row">
+        <button id="rmSend" type="button" class="primary-btn">Send PayPal reminder</button>
+        <button class="secondary-btn ghost-btn" id="rmMail" type="button">Open in Gmail</button>
+        <button class="secondary-btn ghost-btn" id="rmCopy" type="button">Copy</button>
+        <button class="close-btn" id="rmClose" type="button">Close</button>
+      </div>
+      <p class="muted">PayPal may replace the wording of its own reminder email with its standard text. To send your exact message, use "Email it myself" or Copy.</p>
+    </dialog>
+  </div>
+
+  <script src="invoices.js"></script>
+  <script src="reminder.js"></script>
+  <script src="insights.js"></script>
   <script type="module" src="calendar-view.js"></script>
   <script src="app.js"></script>
 </body>

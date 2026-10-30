@@ -36,6 +36,19 @@ app.use("/api/insights", limit(30));
 
 app.get("/healthz", (_req, res) => res.send("ok"));
 
+function friendly(e) {
+  const issue = e?.details?.details?.[0]?.issue || "";
+  const known = {
+    INR_FOREIGN_CURRENCY_BLOCKED:
+      "PayPal doesn't allow invoices to customers inside India. Use a client outside India for this demo.",
+    NOT_AUTHORIZED: "PayPal refused this request. Check that the PayPal app has Invoicing enabled.",
+    DUPLICATE_INVOICE_ID: "That invoice number is already used. Please try again.",
+  };
+  if (known[issue]) return known[issue];
+  if (e?.status === 401) return "PayPal sign-in failed. The server's PayPal keys may be wrong.";
+  return e?.message || "Something went wrong. Please try again.";
+}
+
 const validId = (id) => /^[A-Za-z0-9-]+$/.test(id || "");
 
 function validateDraft(d) {
@@ -69,7 +82,7 @@ app.post("/api/invoices", async (req, res) => {
     res.json({ invoice: await createAndSendInvoice(req.body.draft) });
   } catch (e) {
     console.error(e.details ? JSON.stringify(e.details, null, 2) : e);
-    res.status(502).json({ error: "PayPal said: " + e.message });
+    res.status(502).json({ error: friendly(e) });
   }
 });
 
@@ -78,7 +91,7 @@ app.get("/api/invoices", async (_req, res) => {
     res.json({ invoices: await listInvoices() });
   } catch (e) {
     console.error(e);
-    res.status(502).json({ error: "PayPal said: " + e.message });
+    res.status(502).json({ error: friendly(e) });
   }
 });
 
@@ -87,7 +100,7 @@ app.get("/api/insights", async (_req, res) => {
     res.json(await getBriefing(await listInvoices()));
   } catch (e) {
     console.error(e);
-    res.status(502).json({ error: e.message });
+    res.status(502).json({ error: friendly(e) });
   }
 });
 
@@ -115,7 +128,7 @@ app.post("/api/invoices/:id/reminder-draft", async (req, res) => {
     res.json({ invoice: inv, tone, suggestedTone, draft });
   } catch (e) {
     console.error(e);
-    res.status(502).json({ error: e.message });
+    res.status(502).json({ error: friendly(e) });
   }
 });
 
@@ -128,7 +141,7 @@ app.post("/api/invoices/:id/remind", async (req, res) => {
     res.json(await sendReminder(req.params.id, { subject: subject.trim(), note: note.trim() }));
   } catch (e) {
     console.error(e.details ? JSON.stringify(e.details, null, 2) : e);
-    res.status(502).json({ error: "PayPal said: " + e.message });
+    res.status(502).json({ error: friendly(e) });
   }
 });
 

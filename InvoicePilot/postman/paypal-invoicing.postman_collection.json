@@ -1,0 +1,131 @@
+{
+  "info": {
+    "name": "InvoicePilot: PayPal Invoicing (sandbox)",
+    "description": "The PayPal Invoicing API calls used by InvoicePilot. Fill in client_id, client_secret, business_email and buyer_email as collection variables, then run request 1 first.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{access_token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://api-m.sandbox.paypal.com" },
+    { "key": "client_id", "value": "" },
+    { "key": "client_secret", "value": "" },
+    { "key": "access_token", "value": "" },
+    { "key": "invoice_id", "value": "" },
+    { "key": "business_email", "value": "" },
+    { "key": "buyer_email", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Get access token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('access_token', pm.response.json().access_token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "{{client_id}}", "type": "string" },
+            { "key": "password", "value": "{{client_secret}}", "type": "string" }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "urlencoded",
+          "urlencoded": [
+            { "key": "grant_type", "value": "client_credentials" }
+          ]
+        },
+        "url": "{{base_url}}/v1/oauth2/token"
+      }
+    },
+    {
+      "name": "2. Generate next invoice number",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{base_url}}/v2/invoicing/generate-next-invoice-number"
+      }
+    },
+    {
+      "name": "3. Create draft invoice",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set('invoice_id', j.id || j.href.split('/').pop());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Prefer", "value": "return=representation" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"detail\":{\"currency_code\":\"USD\",\"payment_term\":{\"term_type\":\"NET_30\"},\"note\":\"Thanks for your business!\"},\"invoicer\":{\"name\":{\"business_name\":\"Demo Freelancer\"},\"email_address\":\"{{business_email}}\"},\"primary_recipients\":[{\"billing_info\":{\"name\":{\"given_name\":\"Test\",\"surname\":\"Client\"},\"email_address\":\"{{buyer_email}}\"}}],\"items\":[{\"name\":\"Logo design\",\"quantity\":\"5\",\"unit_amount\":{\"currency_code\":\"USD\",\"value\":\"40.00\"},\"unit_of_measure\":\"HOURS\"}]}"
+        },
+        "url": "{{base_url}}/v2/invoicing/invoices"
+      }
+    },
+    {
+      "name": "4. Send invoice",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"send_to_recipient\": true, \"send_to_invoicer\": false}"
+        },
+        "url": "{{base_url}}/v2/invoicing/invoices/{{invoice_id}}/send"
+      }
+    },
+    {
+      "name": "5. Fetch invoice by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v2/invoicing/invoices/{{invoice_id}}"
+      }
+    },
+    {
+      "name": "6. List invoices",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/v2/invoicing/invoices?page=1&page_size=50&total_required=true"
+      }
+    },
+    {
+      "name": "7. Send reminder",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"subject\":\"Friendly payment reminder\",\"note\":\"Hi, just checking in on the invoice. Please let me know if you need anything else.\",\"send_to_invoicer\": false}"
+        },
+        "url": "{{base_url}}/v2/invoicing/invoices/{{invoice_id}}/remind"
+      }
+    }
+  ]
+}

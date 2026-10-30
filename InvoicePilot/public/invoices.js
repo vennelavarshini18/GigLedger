@@ -54,7 +54,7 @@ async function loadInvoices() {
   try {
     renderInvoices((await api("/api/invoices")).invoices);
   } catch (e) {
-    q("listStatus").textContent = e.message;
+    q("listStatus").textContent = e.message + " Click Refresh to try again.";
   }
 }
 

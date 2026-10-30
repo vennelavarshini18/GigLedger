@@ -186,3 +186,15 @@ export async function sendReminder(id, { subject, note }) {
   });
   return { ok: true };
 }
+
+export async function recordExternalPayment(id, { amount, currency }) {
+  await pp(`/v2/invoicing/invoices/${id}/payments`, {
+    method: "POST",
+    body: {
+      method: "BANK_TRANSFER",
+      payment_date: new Date().toISOString().slice(0, 10),
+      amount: { currency_code: currency, value: Number(amount).toFixed(2) },
+      note: "Demo data: payment recorded",
+    },
+  });
+}

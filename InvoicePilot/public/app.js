@@ -1,5 +1,13 @@
 const $ = (id) => document.getElementById(id);
 
+const heroStart = document.getElementById("heroStart");
+if (heroStart) {
+  heroStart.addEventListener("click", () => {
+    const target = document.getElementById("workflow");
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
 function setStatus(msg, isError = false) {
   $("status").textContent = msg;
   $("status").className = isError ? "error" : "";
@@ -99,6 +107,37 @@ function showResult(inv) {
   box.classList.remove("hidden");
 }
 
+document.querySelectorAll(".chip").forEach((button) => {
+  button.onclick = () => {
+    const note = $("note");
+    note.value = button.dataset.note;
+    note.focus();
+  };
+});
+
+function checkDraft(d) {
+  document.querySelectorAll(".invalid").forEach((node) => node.classList.remove("invalid"));
+  const errs = [];
+  const bad = (node, msg) => { if (node) node.classList.add("invalid"); errs.push(msg); };
+
+  if (!d.client_name.trim()) bad($("client_name"), "Add the client's name.");
+  if (!/^\S+@\S+\.\S+$/.test(d.client_email)) bad($("client_email"), "Enter a valid client email.");
+
+  const rows = [...document.querySelectorAll(".item")];
+  if (!rows.length) errs.push("Add at least one line item.");
+
+  rows.forEach((r, n) => {
+    const desc = r.querySelector(".desc");
+    const qty = r.querySelector(".qty");
+    const price = r.querySelector(".price");
+    if (!desc.value.trim()) bad(desc, `Item ${n + 1} needs a description.`);
+    if (!(Number(qty.value) > 0)) bad(qty, `Item ${n + 1} needs a quantity above 0.`);
+    if (!(Number(price.value) > 0)) bad(price, `Item ${n + 1} needs a price above 0.`);
+  });
+
+  return errs;
+}
+
 $("addItem").onclick = () => addItemRow();
 $("currency").onchange = updateTotal;
 
@@ -115,10 +154,13 @@ $("parseBtn").onclick = async () => {
 };
 
 $("sendBtn").onclick = async () => {
+  const draft = readDraft();
+  const errs = checkDraft(draft);
+  if (errs.length) return setStatus(errs[0], true);
   $("sendBtn").disabled = true;
   setStatus("Creating and sending your invoice on PayPal…");
   try {
-    showResult((await api("/api/invoices", { draft: readDraft() })).invoice);
+    showResult((await api("/api/invoices", { draft })).invoice);
     loadInvoices();
     if (typeof loadBriefing === "function") loadBriefing();
     setStatus("");
