@@ -6,9 +6,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --check server.js && node --check src/paypal.js && node --check src/ai.js",
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "seed": "node scripts/seed-demo.js",
+    "test:ai": "node scripts/test-ai.js",
+    "test:invoice": "node scripts/test-invoice.js"
   },
   "keywords": [],
   "author": "",

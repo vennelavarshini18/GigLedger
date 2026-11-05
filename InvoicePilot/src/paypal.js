@@ -1,4 +1,4 @@
-const base = () => process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
+﻿const base = () => process.env.PAYPAL_BASE_URL || "https://api-m.sandbox.paypal.com";
 
 export class PayPalError extends Error {
   constructor(message, status, details) {
@@ -12,9 +12,11 @@ let cached = { token: null, expires: 0 };
 
 async function getToken() {
   if (cached.token && Date.now() < cached.expires) return cached.token;
+
   const auth = Buffer.from(
     `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
   ).toString("base64");
+
   const res = await fetch(`${base()}/v1/oauth2/token`, {
     method: "POST",
     headers: {
@@ -23,8 +25,10 @@ async function getToken() {
     },
     body: "grant_type=client_credentials",
   });
+
   const data = await res.json();
   if (!res.ok) throw new PayPalError("PayPal authentication failed", res.status, data);
+
   cached = { token: data.access_token, expires: Date.now() + (data.expires_in - 60) * 1000 };
   return cached.token;
 }
@@ -33,21 +37,31 @@ async function pp(path, { method = "GET", body, headers = {} } = {}) {
   const token = await getToken();
   const res = await fetch(`${base()}${path}`, {
     method,
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...headers },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      ...headers,
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
+
   const text = await res.text();
   let data = {};
-  try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { raw: text };
+  }
+
   if (!res.ok) {
     const detail = data.details?.[0];
     const msg = detail ? `${detail.issue}: ${detail.description}` : data.message;
     throw new PayPalError(msg || "PayPal request failed", res.status, data);
   }
+
   return data;
 }
 
-// PayPal only accepts fixed payment terms, so map "days" to the nearest one.
 function termFromDays(days) {
   const d = Number(days) || 0;
   if (d <= 0) return "DUE_ON_RECEIPT";
@@ -63,6 +77,7 @@ export function buildInvoicePayload(draft, invoiceNumber) {
   const paymentTerm = draft.due_date
     ? { term_type: "DUE_ON_DATE_SPECIFIED", due_date: draft.due_date }
     : { term_type: termFromDays(draft.due_in_days) };
+
   return {
     detail: {
       ...(invoiceNumber ? { invoice_number: invoiceNumber } : {}),
@@ -106,6 +121,7 @@ export async function createAndSendInvoice(draft) {
     headers: { Prefer: "return=representation" },
     body: buildInvoicePayload(draft, invoiceNumber),
   });
+
   const id = created.id || created.href?.split("/").pop();
 
   await pp(`/v2/invoicing/invoices/${id}/send`, {
@@ -123,8 +139,6 @@ export async function createAndSendInvoice(draft) {
     payUrl: full.detail?.metadata?.recipient_view_url,
   };
 }
-
-/* ---------- Status logic: PayPal has no "overdue" status, so we derive it ---------- */
 
 const PAID = new Set(["PAID", "MARKED_AS_PAID", "PAID_EXTERNAL"]);
 const OPEN = new Set(["SENT", "UNPAID", "PARTIALLY_PAID", "PAYMENT_PENDING"]);
@@ -168,7 +182,6 @@ function mapInvoice(inv) {
 
 export async function listInvoices() {
   const data = await pp("/v2/invoicing/invoices?page=1&page_size=50&total_required=true");
-  console.log(JSON.stringify(data.items?.[0], null, 2));
   return (data.items || [])
     .map(mapInvoice)
     .sort((a, b) => (b.invoiceDate || "").localeCompare(a.invoiceDate || "") || (b.number || "").localeCompare(a.number || ""));
@@ -178,7 +191,6 @@ export async function getInvoice(id) {
   return mapInvoice(await pp(`/v2/invoicing/invoices/${id}`));
 }
 
-// PayPal's own reminder email (only works for UNPAID / SENT / PARTIALLY_PAID; max 2 per day).
 export async function sendReminder(id, { subject, note }) {
   await pp(`/v2/invoicing/invoices/${id}/remind`, {
     method: "POST",
