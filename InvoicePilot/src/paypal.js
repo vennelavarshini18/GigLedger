@@ -182,13 +182,32 @@ function mapInvoice(inv) {
 
 export async function listInvoices() {
   const data = await pp("/v2/invoicing/invoices?page=1&page_size=50&total_required=true");
+  const hiddenIds = new Set(
+    (process.env.PAYPAL_HIDDEN_INVOICE_IDS || "")
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+  );
   return (data.items || [])
+    .filter((inv) => !["CANCELLED", "CANCELED"].includes(inv.status) && !hiddenIds.has(inv.id))
     .map(mapInvoice)
     .sort((a, b) => (b.invoiceDate || "").localeCompare(a.invoiceDate || "") || (b.number || "").localeCompare(a.number || ""));
 }
 
 export async function getInvoice(id) {
   return mapInvoice(await pp(`/v2/invoicing/invoices/${id}`));
+}
+
+export async function cancelInvoice(id) {
+  await pp(`/v2/invoicing/invoices/${id}/cancel`, {
+    method: "POST",
+    body: {
+      subject: "Duplicate demo invoice",
+      note: "This duplicate sandbox demo invoice has been canceled.",
+      send_to_invoicer: false,
+      send_to_recipient: false,
+    },
+  });
 }
 
 export async function sendReminder(id, { subject, note }) {

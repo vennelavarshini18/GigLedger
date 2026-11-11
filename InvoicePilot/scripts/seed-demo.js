@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createAndSendInvoice, recordExternalPayment } from "../src/paypal.js";
+import { createAndSendInvoice, listInvoices, recordExternalPayment } from "../src/paypal.js";
 
 const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
 
@@ -12,7 +12,19 @@ const demo = [
   { client: "Emma Chen", what: "Social media graphics", price: 340, invoiced: -15, due: -1, paid: true },
 ];
 
+const existingInvoices = await listInvoices();
+
 for (const d of demo) {
+  const alreadySeeded = existingInvoices.some((invoice) =>
+    invoice.client === d.client &&
+    invoice.currency === "USD" &&
+    Number(invoice.total) === d.price
+  );
+  if (alreadySeeded) {
+    console.log(`Skipped existing demo invoice for ${d.client}: ${d.what}`);
+    continue;
+  }
+
   try {
     const inv = await createAndSendInvoice({
       client_name: d.client,
